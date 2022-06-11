@@ -1,12 +1,14 @@
 package com.inhwan.springsecurity;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
@@ -21,6 +23,10 @@ import java.io.IOException;
 @Configuration
 @EnableWebSecurity // 웹 보안 활성화
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    UserDetailsService userDetailsService;
+
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -38,7 +44,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .successHandler(new AuthenticationSuccessHandler() {
                     @Override
                     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-                        System.out.println("authentication" + authentication.getName());
+                        System.out.println("authentication > " + authentication.getName());
                         response.sendRedirect("/");
                     }
                 })
@@ -53,7 +59,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http
                 .logout()
-                .logoutUrl("/logout") // 스프링 시큐리티가 로그아웃 할 때 원칙적으로는  Post 요청을 함
+                .logoutUrl("/logout") // 스프링 시큐리티가 로그아웃 할 때 원칙적으로는 Post 요청을 함
+                .logoutSuccessUrl("/login")
                 .addLogoutHandler(new LogoutHandler() {
                     @Override
                     public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
@@ -67,6 +74,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         response.sendRedirect("/login");
                     }
                 })
-                .deleteCookies("remember-me");
+                .deleteCookies("remember-me")
+        .and()
+                .rememberMe()
+                .rememberMeParameter("remember")
+                .tokenValiditySeconds(3600)
+                .userDetailsService(userDetailsService);
     }
 }
